@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kiss Proposal</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;height:100vh;overflow:hidden;font-family:Arial,sans-serif;background:linear-gradient(135deg,#ff9ac6,#ffd6ea,#ffeef7);display:flex;align-items:center;justify-content:center}
+#hearts,#love{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.heart{position:absolute;animation:rise linear forwards}
+@keyframes rise{from{transform:translateY(100vh);opacity:0}20%{opacity:1}to{transform:translateY(-120px);opacity:0}}
+.card{background:rgba(255,255,255,.25);backdrop-filter:blur(15px);padding:35px;border-radius:24px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+h1{color:#fff}#msg{height:28px;color:#fff;font-weight:bold}
+button{padding:14px 30px;border:none;border-radius:999px;font-size:18px;cursor:pointer;transition:.25s}
+#yes{background:#ff4f8b;color:#fff;margin-right:14px}
+#no{background:#fff}
+.fade{animation:f .5s forwards}@keyframes f{to{opacity:0;transform:scale(.2)}}
+.success{position:fixed;inset:0;background:linear-gradient(135deg,#ff6fb1,#ffb7da);display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center}
+.success h2{font-size:3rem;animation:p .8s infinite alternate}@keyframes p{to{transform:scale(1.08)}}
+</style></head><body>
+<div id="hearts"></div>
+<div class="card">
+<h1>❤️ Can you give me a kiss? 😘</h1>
+<div><button id="yes">💖 Yes</button><button id="no">😢 No</button></div>
+<p id="msg"></p>
+</div>
+<script>
+const hearts=document.getElementById('hearts');
+setInterval(()=>{let h=document.createElement('div');h.className='heart';h.textContent='❤️';h.style.left=Math.random()*100+'vw';h.style.fontSize=(16+Math.random()*20)+'px';h.style.animationDuration=(4+Math.random()*3)+'s';hearts.appendChild(h);setTimeout(()=>h.remove(),7000)},250);
+const yes=document.getElementById('yes'),no=document.getElementById('no'),msg=document.getElementById('msg');
+const msgs=["Are you sure? 🥺","Think again 😏","No isn't working 😂","Oops... 😅","Too late! ❤️"];
+let tries=0;
+function move(){const w=innerWidth-no.offsetWidth,h=innerHeight-no.offsetHeight;no.style.position='fixed';no.style.left=Math.random()*w+'px';no.style.top=Math.random()*h+'px';}
+function attempt(e){e.preventDefault();tries++;msg.textContent=msgs[Math.min(tries-1,msgs.length-1)];
+yes.style.transform=`scale(${1+tries*.08})`;
+if(tries<=3){move();}
+else if(tries===4){const r=yes.getBoundingClientRect();no.style.position='fixed';no.style.left=r.left+'px';no.style.top=r.top+'px';}
+else if(tries===5){no.classList.add('fade');no.style.pointerEvents='none';setTimeout(()=>{no.remove();setTimeout(()=>yes.click(),500)},500);}
+}
+no.addEventListener('mouseenter',attempt);no.addEventListener('click',attempt);
+yes.onclick=()=>{
+document.body.innerHTML='<div id="love"></div><div class="success"><h2>🥰 Yayyyyy!!</h2><p>You just made my day!<br>Sending you a big virtual kiss 😘❤️</p></div>';
+const love=document.getElementById('love');
+setInterval(()=>{let h=document.createElement('div');h.className='heart';h.textContent='💖';h.style.left=Math.random()*100+'vw';h.style.fontSize=(20+Math.random()*25)+'px';h.style.animationDuration=(3+Math.random()*2)+'s';love.appendChild(h);setTimeout(()=>h.remove(),6000)},120);
+const end=Date.now()+4000;(function f(){confetti({particleCount:6,spread:70,origin:{x:0}});confetti({particleCount:6,spread:70,origin:{x:1}});if(Date.now()<end)requestAnimationFrame(f)})();
+}
+</script></body></html>
