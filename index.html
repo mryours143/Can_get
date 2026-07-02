@@ -158,8 +158,10 @@
       position: relative;
       min-height: 170px;
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: center;
+      gap: 1rem;
       overflow: hidden;
       border-radius: 18px;
       background:
@@ -178,6 +180,7 @@
       box-shadow: 0 16px 30px rgba(52, 12, 58, .25);
       user-select: none;
       will-change: transform;
+      min-width: 190px;
     }
 
     .btn-yes {
@@ -212,21 +215,20 @@
     }
 
     .btn-no {
-      position: absolute;
-      right: 14%;
-      bottom: 18%;
-      background: linear-gradient(135deg, rgba(255,255,255,.9), rgba(255,240,248,.8));
+      background: linear-gradient(135deg, #fff7fb, #ffe2ef 55%, #ffd4e6);
       color: #7b305d;
       border: 0;
-      box-shadow: 0 16px 30px rgba(75, 16, 60, .2);
+      box-shadow: 0 16px 30px rgba(75, 16, 60, .18), inset 0 1px 0 rgba(255,255,255,.7);
       z-index: 4;
-      transition: left .18s ease, top .18s ease, transform .18s ease, box-shadow .18s ease;
-      transform: translate(0, 0) rotate(-2deg);
+      transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+      transform: translate(0, 0) rotate(-2deg) scale(1);
     }
 
     .btn-no:hover {
-      transform: translateY(-1px) rotate(4deg) scale(1.02);
-      box-shadow: 0 18px 36px rgba(75, 16, 60, .24);
+      color: #5d2148;
+      background: linear-gradient(135deg, #fff2f8, #ffcfdf 55%, #ffbfd4);
+      transform: translateY(-2px) rotate(-1deg) scale(1.02);
+      box-shadow: 0 20px 40px rgba(75, 16, 60, .26), 0 0 0 4px rgba(255, 214, 232, .35);
     }
 
     .btn-no:focus {
@@ -250,15 +252,6 @@
       opacity: 0;
       text-shadow: 0 0 14px rgba(255,255,255,.65);
       animation: floatUp linear forwards;
-    }
-
-    .sparkle-particle {
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.85);
-      box-shadow: 0 0 12px rgba(255,255,255,.9), 0 0 24px rgba(255, 180, 230, .8);
-      animation: sparkle 1.5s ease-in-out infinite;
     }
 
     .celebration {
@@ -504,10 +497,17 @@
     }
 
     @media (max-width: 576px) {
-      .button-stage { min-height: 220px; }
-      .btn-no {
-        right: 10%;
-        bottom: 12%;
+      .button-stage {
+        min-height: 220px;
+        flex-direction: column;
+        gap: .9rem;
+        padding: .25rem;
+      }
+      .btn-romantic {
+        width: min(100%, 320px);
+        min-width: 0;
+        padding: .95rem 1rem;
+        font-size: 1rem;
       }
       .romance-card {
         border-radius: 24px;
@@ -532,7 +532,7 @@
     <div class="card-shell">
       <section class="romance-card text-center">
         <div class="eyebrow">A tiny question from my heart</div>
-        <h1 class="title">Will you go on a date with me?</h1>
+        <h1 class="title">Hariyana, will you go on a date with me?</h1>
         <p class="subtitle">
           I built this little moment just for you: soft, glowing, and a little playful. Say yes, and let’s make a beautiful memory together.
         </p>
@@ -555,18 +555,15 @@
   <div id="celebration" class="celebration" aria-hidden="true">
     <div class="celebration-card">
       <div class="success-badge"><span>💞</span></div>
-      <h2>Accepted! ❤️ Your response is saved.</h2>
-      <div class="db-meta">Saving to Appwrite database proposalDB / responses</div>
+      <h2>Response received... and safely saved in the most special place—my heart. ❤️🥹</h2>
+      <div class="db-meta">Thank you for your response. 😊</div>
       <p>
         You just made this page blush. I’m already smiling at the thought of our date and all the sweet moments we’ll share.
       </p>
-      <p id="databaseStatus" class="db-status">Saving your acceptance to Appwrite...</p>
     </div>
   </div>
 
   <div id="celebrationLayer" class="celebration-layer"></div>
-  <button id="musicToggle" class="music-toggle" type="button" aria-pressed="false">Music: Off</button>
-  <div id="audioToast" class="audio-toast">Romantic music is ready. Tap to enable sound.</div>
 
   <script type="module">
     import { Client, Databases, ID } from 'https://cdn.jsdelivr.net/npm/appwrite@14.0.1/+esm';
@@ -587,26 +584,25 @@
     const noBtn = document.getElementById('noBtn');
     const celebration = document.getElementById('celebration');
     const celebrationLayer = document.getElementById('celebrationLayer');
-    const musicToggle = document.getElementById('musicToggle');
-    const audioToast = document.getElementById('audioToast');
-    const databaseStatus = document.getElementById('databaseStatus');
-
     const rand = (min, max) => Math.random() * (max - min) + min;
-    let audioEnabled = false;
-    let audioCtx = null;
-    let musicInterval = null;
     let noAvoidanceLock = false;
     let acceptanceSaved = false;
+    let noClickCount = 0;
 
     function clamp(value, min, max) {
       return Math.min(Math.max(value, min), max);
     }
 
     function showToast(message) {
-      audioToast.textContent = message;
-      audioToast.classList.add('show');
       clearTimeout(showToast.timer);
-      showToast.timer = setTimeout(() => audioToast.classList.remove('show'), 2200);
+      const toast = document.createElement('div');
+      toast.className = 'audio-toast show';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      showToast.timer = setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 260);
+      }, 2200);
     }
 
     async function saveAcceptanceToDatabase() {
@@ -654,16 +650,6 @@
       setTimeout(() => heart.remove(), duration * 1000);
     }
 
-    function createSparkle(parent, x, y) {
-      const sparkle = document.createElement('span');
-      sparkle.className = 'sparkle-particle';
-      sparkle.style.left = `${x}px`;
-      sparkle.style.top = `${y}px`;
-      sparkle.style.animationDelay = `${rand(0, 1.2)}s`;
-      parent.appendChild(sparkle);
-      setTimeout(() => sparkle.remove(), 2400);
-    }
-
     function createCelebrationParticles() {
       celebrationLayer.innerHTML = '';
       const vw = window.innerWidth;
@@ -704,191 +690,59 @@
       }
     }
 
-    function launchSparkles() {
-      const rect = buttonStage.getBoundingClientRect();
-      for (let i = 0; i < 14; i++) {
-        createSparkle(buttonStage, rand(0, rect.width), rand(0, rect.height));
-      }
-    }
-
-    function createAmbientHearts() {
-      setInterval(() => {
-        if (document.hidden) return;
-        const rect = buttonStage.getBoundingClientRect();
-        const left = rect.left + rand(0, rect.width);
-        createHeart(document.body, ['💗', '💞', '💖'][Math.floor(Math.random() * 3)], left, window.innerHeight + 28, rand(18, 30), rand(4, 7));
-      }, 950);
-    }
-
-    function moveNoButtonAway(event) {
-      if (noAvoidanceLock) return;
-      const stageRect = buttonStage.getBoundingClientRect();
-      const btnRect = noBtn.getBoundingClientRect();
-      const pointerX = event.clientX;
-      const pointerY = event.clientY;
-      const btnCenterX = btnRect.left + btnRect.width / 2;
-      const btnCenterY = btnRect.top + btnRect.height / 2;
-      const distance = Math.hypot(pointerX - btnCenterX, pointerY - btnCenterY);
-
-      if (distance < 150) {
-        noAvoidanceLock = true;
-        const maxX = stageRect.width - btnRect.width - 18;
-        const maxY = stageRect.height - btnRect.height - 18;
-        const currentLeft = noBtn.offsetLeft;
-        const currentTop = noBtn.offsetTop;
-
-        let nextLeft = rand(14, Math.max(14, maxX));
-        let nextTop = rand(14, Math.max(14, maxY));
-
-        const candidates = [
-          { x: 14, y: 14 },
-          { x: maxX, y: 14 },
-          { x: 14, y: maxY },
-          { x: maxX, y: maxY },
-          { x: stageRect.width * 0.5 - btnRect.width * 0.5, y: rand(14, maxY) },
-          { x: rand(14, maxX), y: stageRect.height * 0.5 - btnRect.height * 0.5 }
-        ].map(pos => ({
-          x: clamp(pos.x, 14, maxX),
-          y: clamp(pos.y, 14, maxY)
-        }));
-
-        let best = candidates[0];
-        let bestDistance = -Infinity;
-        for (const candidate of candidates) {
-          const d = Math.hypot(candidate.x - currentLeft, candidate.y - currentTop);
-          if (d > bestDistance) {
-            bestDistance = d;
-            best = candidate;
-          }
-        }
-
-        nextLeft = best.x;
-        nextTop = best.y;
-        noBtn.style.left = `${nextLeft}px`;
-        noBtn.style.top = `${nextTop}px`;
-        noBtn.style.right = 'auto';
-        noBtn.style.bottom = 'auto';
-        noBtn.style.transform = `translate(${rand(-6, 6)}px, ${rand(-4, 4)}px) rotate(${rand(-10, 10)}deg)`;
-        launchSparkles();
-        setTimeout(() => { noAvoidanceLock = false; }, 140);
-      }
-    }
-
     function resetNoButtonPosition() {
-      const stageRect = buttonStage.getBoundingClientRect();
-      const btnRect = noBtn.getBoundingClientRect();
-      const left = clamp(stageRect.width * 0.67, 16, stageRect.width - btnRect.width - 16);
-      const top = clamp(stageRect.height * 0.58, 16, stageRect.height - btnRect.height - 16);
-      noBtn.style.left = `${left}px`;
-      noBtn.style.top = `${top}px`;
-      noBtn.style.right = 'auto';
-      noBtn.style.bottom = 'auto';
+      noBtn.style.transform = 'translate(0, 0) rotate(-2deg) scale(1)';
+      yesBtn.style.transform = 'scale(1)';
+      updateButtonSizes();
     }
 
-    function synthesizeRomanticMusic() {
-      if (!audioEnabled) return;
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
+    function updateButtonSizes() {
+      const yesScale = 1 + (noClickCount * 0.12);
+      const noScale = Math.max(0.4, 1 - (noClickCount * 0.12));
 
-      const ctx = audioCtx;
-      const melody = [0, 3, 5, 7, 5, 3, 0, -2];
-      const base = 261.63;
-      let step = 0;
-
-      if (musicInterval) clearInterval(musicInterval);
-      musicInterval = setInterval(() => {
-        const now = ctx.currentTime;
-        const osc = ctx.createOscillator();
-        const detune = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-        const note = melody[step % melody.length];
-        const frequency = base * Math.pow(2, note / 12);
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(frequency, now);
-        detune.type = 'triangle';
-        detune.frequency.setValueAtTime(frequency * 0.5, now);
-        gainNode.gain.setValueAtTime(0.0001, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.065, now + 0.06);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
-
-        osc.connect(gainNode).connect(ctx.destination);
-        detune.connect(gainNode).connect(ctx.destination);
-        osc.start(now);
-        detune.start(now);
-        osc.stop(now + 1);
-        detune.stop(now + 1);
-        step += 1;
-      }, 620);
-    }
-
-    function stopMusic() {
-      if (musicInterval) clearInterval(musicInterval);
-      musicInterval = null;
-      if (audioCtx && audioCtx.state !== 'closed') {
-        audioCtx.suspend().catch(() => {});
-      }
+      yesBtn.style.transform = `scale(${yesScale})`;
+      yesBtn.style.zIndex = '5';
+      noBtn.style.transform = `translate(0, 0) rotate(-2deg) scale(${noScale})`;
+      noBtn.style.opacity = String(Math.max(0.25, noScale));
     }
 
     yesBtn.addEventListener('click', async () => {
       celebration.classList.add('show');
       celebration.setAttribute('aria-hidden', 'false');
       createCelebrationParticles();
-      databaseStatus.textContent = 'Saving your acceptance to Appwrite...';
 
       try {
         await saveAcceptanceToDatabase();
-        databaseStatus.textContent = 'Saved to Appwrite database proposalDB / responses.';
         showToast('Your acceptance was saved to Appwrite.');
       } catch (error) {
         const details = error?.message || error?.response || 'Unknown Appwrite error';
-        databaseStatus.textContent = `Appwrite could not save the response: ${details}`;
         showToast('Appwrite rejected the save. Check the exact collection fields.');
       }
 
-      if (audioEnabled) {
-        if (audioCtx && audioCtx.state === 'suspended') {
-          try { await audioCtx.resume(); } catch (_) {}
-        }
-        synthesizeRomanticMusic();
-      }
       document.querySelector('.romance-card').style.filter = 'blur(1px) saturate(0.92)';
     });
 
-    noBtn.addEventListener('pointerenter', moveNoButtonAway);
-    noBtn.addEventListener('pointermove', moveNoButtonAway);
-    buttonStage.addEventListener('pointermove', moveNoButtonAway);
+    noBtn.addEventListener('click', () => {
+      if (noBtn.classList.contains('hidden')) return;
+
+      noClickCount += 1;
+      updateButtonSizes();
+
+      if (noClickCount >= 5) {
+        noBtn.classList.add('hidden');
+        yesBtn.style.transform = 'scale(1.35)';
+        yesBtn.style.zIndex = '6';
+        showToast('You have no other option say yesss plsss.');
+      }
+    });
 
     window.addEventListener('resize', () => {
       resetNoButtonPosition();
     });
 
-    musicToggle.addEventListener('click', async () => {
-      audioEnabled = !audioEnabled;
-      musicToggle.textContent = audioEnabled ? 'Music: On' : 'Music: Off';
-      musicToggle.setAttribute('aria-pressed', String(audioEnabled));
-      if (audioEnabled) {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        try {
-          if (audioCtx.state === 'suspended') await audioCtx.resume();
-        } catch (_) {}
-        synthesizeRomanticMusic();
-        showToast('Romantic music enabled.');
-      } else {
-        stopMusic();
-        showToast('Music paused.');
-      }
-    });
-
     document.addEventListener('DOMContentLoaded', () => {
       resetNoButtonPosition();
-      createAmbientHearts();
-
-      const rect = buttonStage.getBoundingClientRect();
-      for (let i = 0; i < 10; i++) {
-        createSparkle(buttonStage, rand(20, rect.width - 20), rand(20, rect.height - 20));
-      }
+      updateButtonSizes();
 
       // Seed a few floating hearts so the page feels alive immediately.
       for (let i = 0; i < 8; i++) {
