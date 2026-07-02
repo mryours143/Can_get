@@ -509,6 +509,18 @@
         padding: .95rem 1rem;
         font-size: 1rem;
       }
+      .music-toggle {
+        right: 12px;
+        bottom: 12px;
+        padding: .7rem .9rem;
+        font-size: .92rem;
+      }
+      .audio-toast {
+        bottom: 76px;
+        max-width: calc(100vw - 24px);
+        font-size: .92rem;
+        padding: .65rem .9rem;
+      }
       .romance-card {
         border-radius: 24px;
       }
@@ -564,6 +576,8 @@
   </div>
 
   <div id="celebrationLayer" class="celebration-layer"></div>
+  <button id="musicToggle" class="music-toggle" type="button" aria-pressed="false">Music: Off</button>
+  <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
 
   <script type="module">
     import { Client, Databases, ID } from 'https://cdn.jsdelivr.net/npm/appwrite@14.0.1/+esm';
@@ -584,10 +598,13 @@
     const noBtn = document.getElementById('noBtn');
     const celebration = document.getElementById('celebration');
     const celebrationLayer = document.getElementById('celebrationLayer');
+    const musicToggle = document.getElementById('musicToggle');
+    const bgMusic = document.getElementById('bgMusic');
     const rand = (min, max) => Math.random() * (max - min) + min;
     let noAvoidanceLock = false;
     let acceptanceSaved = false;
     let noClickCount = 0;
+    let bgMusicEnabled = false;
 
     function clamp(value, min, max) {
       return Math.min(Math.max(value, min), max);
@@ -603,6 +620,27 @@
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 260);
       }, 2200);
+    }
+
+    function startBgMusic() {
+      bgMusic.currentTime = 0;
+      bgMusic.loop = true;
+      const playPromise = bgMusic.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {});
+      }
+      bgMusicEnabled = true;
+      musicToggle.textContent = 'Music: On';
+      musicToggle.setAttribute('aria-pressed', 'true');
+      showToast('Background music is on.');
+    }
+
+    function stopBgMusic() {
+      bgMusicEnabled = false;
+      musicToggle.textContent = 'Music: Off';
+      musicToggle.setAttribute('aria-pressed', 'false');
+      bgMusic.pause();
+      showToast('Background music is off.');
     }
 
     async function saveAcceptanceToDatabase() {
@@ -710,6 +748,9 @@
       celebration.classList.add('show');
       celebration.setAttribute('aria-hidden', 'false');
       createCelebrationParticles();
+      if (!bgMusicEnabled) {
+        startBgMusic();
+      }
 
       try {
         await saveAcceptanceToDatabase();
@@ -733,6 +774,14 @@
         yesBtn.style.transform = 'scale(1.35)';
         yesBtn.style.zIndex = '6';
         showToast('You have no other option say yesss plsss.');
+      }
+    });
+
+    musicToggle.addEventListener('click', () => {
+      if (bgMusicEnabled) {
+        stopBgMusic();
+      } else {
+        startBgMusic();
       }
     });
 
